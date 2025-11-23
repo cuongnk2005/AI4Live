@@ -395,6 +395,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       overflow-y: auto;
       display: flex;
       flex-direction: column;
+      position: relative; /* For absolute positioning of popup */
     }
     
     .chat-container::-webkit-scrollbar {
@@ -701,6 +702,197 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       margin-top: 8px;
       font-size: 13px;
     }
+    
+    /* Inline Chat Popup */
+    .inline-chat-popup {
+      position: absolute;
+      display: none;
+      background: #2d2d2d;
+      border: 1px solid #565869;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      z-index: 10000;
+      min-width: 320px;
+      max-width: 400px;
+      animation: popupFadeIn 0.2s ease;
+    }
+    
+    @keyframes popupFadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .inline-chat-popup.show {
+      display: block;
+    }
+    
+    .popup-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #565869;
+    }
+    
+    .popup-title {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+      color: #10a37f;
+    }
+    
+    .popup-close {
+      background: transparent;
+      border: none;
+      color: #8e8ea0;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 16px;
+      line-height: 1;
+    }
+    
+    .popup-close:hover {
+      background: #40414f;
+      color: #ececf1;
+    }
+    
+    .popup-context {
+      background: #1a1a1a;
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      max-height: 80px;
+      overflow-y: auto;
+      font-size: 12px;
+      color: #8e8ea0;
+      line-height: 1.4;
+    }
+    
+    .popup-context::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    .popup-context::-webkit-scrollbar-thumb {
+      background: #565869;
+      border-radius: 2px;
+    }
+    
+    .popup-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    
+    .popup-input {
+      flex: 1;
+      background: #40414f;
+      border: 1px solid #565869;
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: #ececf1;
+      font-size: 13px;
+      outline: none;
+      resize: none;
+      min-height: 36px;
+      max-height: 100px;
+      font-family: inherit;
+    }
+    
+    .popup-input:focus {
+      border-color: #10a37f;
+    }
+    
+    .popup-send-btn {
+      background: #10a37f;
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    
+    .popup-send-btn:hover:not(:disabled) {
+      background: #0d8c6a;
+    }
+    
+    .popup-send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .popup-answer {
+      margin-top: 10px;
+      padding: 10px;
+      background: #1a1a1a;
+      border-radius: 6px;
+      border-left: 3px solid #10a37f;
+      display: none;
+      animation: answerFadeIn 0.3s ease;
+    }
+    
+    @keyframes answerFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .popup-answer.show {
+      display: block;
+    }
+    
+    .popup-answer-label {
+      font-size: 11px;
+      color: #10a37f;
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .popup-answer-text {
+      font-size: 13px;
+      color: #ececf1;
+      line-height: 1.6;
+    }
+    
+    .popup-loading {
+      display: none;
+      text-align: center;
+      padding: 10px;
+      color: #8e8ea0;
+      font-size: 12px;
+    }
+    
+    .popup-loading.show {
+      display: block;
+    }
+    
+    .popup-error {
+      display: none;
+      background: #7f1d1d;
+      color: #fca5a5;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    
+    .popup-error.show {
+      display: block;
+    }
+    
+    /* Text selection highlight */
+    ::selection {
+      background: #10a37f40;
+      color: #ececf1;
+    }
   </style>
 </head>
 <body>
@@ -734,10 +926,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="loading-text">🤖 Đang tạo bài học với Gemini AI...</div>
     <div class="loading-subtext">Quá trình này có thể mất 30-90 giây. Vui lòng chờ...</div>
   </div>
-
+  
   <!-- Main Content -->
   <div class="main-content">
     <div class="chat-container" id="chatContainer">
+      <!-- Inline Chat Popup -->
+      <div class="inline-chat-popup" id="inlineChatPopup">
+        <div class="popup-header">
+          <div class="popup-title">💬 Hỏi Gemini</div>
+          <button class="popup-close" onclick="closeInlineChat()">✕</button>
+        </div>
+        <div class="popup-context" id="popupContext"></div>
+        <div class="popup-input-row">
+          <textarea 
+            class="popup-input" 
+            id="popupInput" 
+            placeholder="Đặt câu hỏi về đoạn text này..."
+            rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askInlineQuestion();}"
+          ></textarea>
+          <button class="popup-send-btn" id="popupSendBtn" onclick="askInlineQuestion()">
+            ▶ Gửi
+          </button>
+        </div>
+        <div class="popup-loading" id="popupLoading">⏳ Đang hỏi Gemini...</div>
+        <div class="popup-error" id="popupError"></div>
+        <div class="popup-answer" id="popupAnswer">
+          <div class="popup-answer-label">🤖 Gemini trả lời:</div>
+          <div class="popup-answer-text" id="popupAnswerText"></div>
+        </div>
+      </div>
+      
       <div class="messages-area" id="messagesArea">
         <?php if ($_SERVER['REQUEST_METHOD'] !== 'POST'): ?>
         <!-- Empty State -->
@@ -1127,6 +1346,188 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         loadingOverlay.classList.remove('show');
       }
     });
+    
+    // ========================================
+    // INLINE CHAT FUNCTIONALITY
+    // ========================================
+    let selectedText = '';
+    let selectionRange = null;
+    
+    // Handle text selection in AI response
+    document.addEventListener('mouseup', function(e) {
+      // Only work on AI response content
+      const target = e.target.closest('.message-content');
+      if (!target) return;
+      
+      const selection = window.getSelection();
+      const text = selection.toString().trim();
+      
+      // Must select at least 5 characters
+      if (text.length < 5) {
+        closeInlineChat();
+        return;
+      }
+      
+      selectedText = text;
+      selectionRange = selection.getRangeAt(0);
+      
+      // Position popup near selection
+      const rect = selectionRange.getBoundingClientRect();
+      const popup = document.getElementById('inlineChatPopup');
+      const chatContainer = document.getElementById('chatContainer');
+      
+      // Get popup dimensions (measure it first)
+      popup.style.display = 'block';
+      popup.style.visibility = 'hidden';
+      const popupWidth = popup.offsetWidth || 320;
+      const popupHeight = popup.offsetHeight || 300;
+      popup.style.display = '';
+      popup.style.visibility = '';
+      
+      // Calculate viewport and scroll info
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      const scrollY = chatContainer.scrollTop;
+      const containerRect = chatContainer.getBoundingClientRect();
+      
+      // Calculate position relative to chat container
+      const selectionTop = rect.top - containerRect.top + scrollY;
+      const selectionBottom = rect.bottom - containerRect.top + scrollY;
+      const selectionLeft = rect.left - containerRect.left;
+      const selectionCenter = selectionLeft + (rect.width / 2);
+      
+      // Default: show below selection
+      let top = selectionBottom + 10;
+      let left = selectionCenter - (popupWidth / 2);
+      
+      // Check if popup fits below selection
+      const spaceBelow = viewportHeight - rect.bottom;
+      const spaceAbove = rect.top - containerRect.top;
+      
+      if (spaceBelow < popupHeight + 20 && spaceAbove > spaceBelow) {
+        // Show above if more space above
+        top = selectionTop - popupHeight - 10;
+      }
+      
+      // Keep popup within horizontal bounds (relative to container)
+      const containerWidth = chatContainer.offsetWidth;
+      if (left < 10) {
+        left = 10;
+      }
+      if (left + popupWidth > containerWidth - 10) {
+        left = containerWidth - popupWidth - 10;
+      }
+      
+      // Set position (absolute within chat container)
+      popup.style.top = top + 'px';
+      popup.style.left = left + 'px';
+      popup.classList.add('show');
+      
+      // Display selected text in context area
+      const contextDiv = document.getElementById('popupContext');
+      contextDiv.textContent = selectedText;
+      
+      // Reset popup state
+      document.getElementById('popupInput').value = '';
+      document.getElementById('popupAnswer').classList.remove('show');
+      document.getElementById('popupError').classList.remove('show');
+      document.getElementById('popupLoading').classList.remove('show');
+      
+      // Focus input
+      setTimeout(() => {
+        document.getElementById('popupInput').focus();
+      }, 100);
+    });
+    
+    // Close popup when clicking outside
+    document.addEventListener('mousedown', function(e) {
+      const popup = document.getElementById('inlineChatPopup');
+      if (!popup.contains(e.target) && popup.classList.contains('show')) {
+        closeInlineChat();
+      }
+    });
+    
+    // Close inline chat
+    function closeInlineChat() {
+      const popup = document.getElementById('inlineChatPopup');
+      popup.classList.remove('show');
+      selectedText = '';
+      selectionRange = null;
+      
+      // Clear selection
+      if (window.getSelection) {
+        window.getSelection().removeAllRanges();
+      }
+    }
+    
+    // Ask inline question to Gemini
+    async function askInlineQuestion() {
+      const question = document.getElementById('popupInput').value.trim();
+      
+      if (!question) {
+        alert('⚠️ Vui lòng nhập câu hỏi');
+        return;
+      }
+      
+      if (!selectedText) {
+        alert('⚠️ Không có văn bản được chọn');
+        return;
+      }
+      
+      // Disable button and show loading
+      const sendBtn = document.getElementById('popupSendBtn');
+      const loading = document.getElementById('popupLoading');
+      const errorDiv = document.getElementById('popupError');
+      const answerDiv = document.getElementById('popupAnswer');
+      
+      sendBtn.disabled = true;
+      loading.classList.add('show');
+      errorDiv.classList.remove('show');
+      answerDiv.classList.remove('show');
+      
+      try {
+        const response = await fetch('ask_gemini.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            context: selectedText,
+            question: question
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          errorDiv.textContent = '❌ ' + data.error;
+          errorDiv.classList.add('show');
+        } else if (data.answer) {
+          document.getElementById('popupAnswerText').textContent = data.answer;
+          answerDiv.classList.add('show');
+          
+          // Clear input after successful answer
+          document.getElementById('popupInput').value = '';
+        }
+        
+      } catch (error) {
+        errorDiv.textContent = '❌ Lỗi kết nối: ' + error.message;
+        errorDiv.classList.add('show');
+      } finally {
+        loading.classList.remove('show');
+        sendBtn.disabled = false;
+      }
+    }
+    
+    // Auto-resize textarea
+    document.getElementById('popupInput')?.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+    });
+    
+    // ========================================
+    // END INLINE CHAT
+    // ========================================
     
     // Auto-load lessons on page load
     if (document.getElementById('lessonsList').querySelector('.no-lessons')) {
