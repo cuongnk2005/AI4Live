@@ -246,7 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tạo bài học từ YouTube (Gemini)</title>
+  <title>Tạo bài học từ YouTube</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
@@ -924,7 +924,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <!-- Loading Overlay -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
-    <div class="loading-text">🤖 Đang tạo bài học với Gemini AI...</div>
+    <div class="loading-text">🤖 Đang tạo bài học...</div>
     <div class="loading-subtext">Quá trình này có thể mất 30-90 giây. Vui lòng chờ...</div>
   </div>
   
@@ -934,7 +934,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <!-- Inline Chat Popup -->
       <div class="inline-chat-popup" id="inlineChatPopup">
         <div class="popup-header">
-          <div class="popup-title">💬 Hỏi Gemini</div>
+          <div class="popup-title">💬 Hỏi AI</div>
           <button class="popup-close" onclick="closeInlineChat()">✕</button>
         </div>
         <div class="popup-context" id="popupContext"></div>
@@ -950,10 +950,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ▶ Gửi
           </button>
         </div>
-        <div class="popup-loading" id="popupLoading">⏳ Đang hỏi Gemini...</div>
+        <div class="popup-loading" id="popupLoading">⏳ Đang hỏi AI...</div>
         <div class="popup-error" id="popupError"></div>
         <div class="popup-answer" id="popupAnswer">
-          <div class="popup-answer-label">🤖 Gemini trả lời:</div>
+          <div class="popup-answer-label">🤖 AI trả lời:</div>
           <div class="popup-answer-text" id="popupAnswerText"></div>
         </div>
       </div>
@@ -963,7 +963,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Empty State -->
         <div class="empty-state">
           <h1>📚 AI4Live - Học từ YouTube</h1>
-          <p>Dán link YouTube vào ô bên dưới để tạo bài học với Gemini AI</p>
+          <p>Dán link YouTube vào ô bên dưới để tạo bài học với AI</p>
         </div>
         <?php else: ?>
           <?php if ($debugInfo !== ''): ?>
@@ -1009,39 +1009,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="message">
             <div class="message-header">
               <div class="message-avatar ai-avatar">🤖</div>
-              <div class="message-role">Gemini AI</div>
+              <div class="message-role"> AI</div>
             </div>
             <div class="message-content" id="aiResponse">
               <?php
-                // Convert Markdown to HTML for better display
-                $html = $output;
-                
-                // Headers
-                $html = preg_replace('/^### (.+)$/m', '<h3>$1</h3>', $html);
-                $html = preg_replace('/^## (.+)$/m', '<h2>$1</h2>', $html);
-                $html = preg_replace('/^# (.+)$/m', '<h1>$1</h1>', $html);
-                
-                // Bold
-                $html = preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $html);
-                
-                // Lists
-                $html = preg_replace('/^\* (.+)$/m', '<li>$1</li>', $html);
-                $html = preg_replace('/(<li>.*<\/li>)/s', '<ul>$1</ul>', $html);
-                
-                // Paragraphs
-                $html = preg_replace('/\n\n/', '</p><p>', $html);
-                $html = '<p>' . $html . '</p>';
-                
-                // Clean up
-                $html = str_replace('<p></p>', '', $html);
-                $html = str_replace('<p><h', '<h', $html);
-                $html = str_replace('</h1></p>', '</h1>', $html);
-                $html = str_replace('</h2></p>', '</h2>', $html);
-                $html = str_replace('</h3></p>', '</h3>', $html);
-                $html = str_replace('<p><ul>', '<ul>', $html);
-                $html = str_replace('</ul></p>', '</ul>', $html);
-                
-                echo $html;
+                // Markdown renderer with proper bold handling (preserves <strong>)
+                $md = $output;
+                $lines = preg_split('/\r?\n/', $md);
+                $htmlParts = [];
+                $inUL = false; $inOL = false; $paraLines = [];
+
+                $renderBold = function($text) {
+                  return preg_replace_callback('/\*\*(.+?)\*\*/s', function($m){
+                    return '<strong>' . htmlspecialchars($m[1], ENT_QUOTES, 'UTF-8') . '</strong>';
+                  }, htmlspecialchars($text, ENT_QUOTES, 'UTF-8'));
+                };
+
+                $flushPara = function() use (&$paraLines, &$htmlParts) {
+                  if (!empty($paraLines)) {
+                    $htmlParts[] = '<p>' . implode(' ', $paraLines) . '</p>';
+                    $paraLines = [];
+                  }
+                };
+                $closeLists = function() use (&$inUL, &$inOL, &$htmlParts) {
+                  if ($inUL) { $htmlParts[] = '</ul>'; $inUL = false; }
+                  if ($inOL) { $htmlParts[] = '</ol>'; $inOL = false; }
+                };
+
+                foreach ($lines as $line) {
+                  $trim = rtrim($line);
+                  if ($trim === '') { $flushPara(); $closeLists(); continue; }
+
+                  // Headings (support bold inside)
+                  if (preg_match('/^###\s+(.+)/', $trim, $m)) { $flushPara(); $closeLists(); $htmlParts[] = '<h3>' . $renderBold($m[1]) . '</h3>'; continue; }
+                  if (preg_match('/^##\s+(.+)/', $trim, $m)) { $flushPara(); $closeLists(); $htmlParts[] = '<h2>' . $renderBold($m[1]) . '</h2>'; continue; }
+                  if (preg_match('/^#\s+(.+)/', $trim, $m))  { $flushPara(); $closeLists(); $htmlParts[] = '<h1>' . $renderBold($m[1]) . '</h1>'; continue; }
+
+                  // Unordered list item
+                  if (preg_match('/^[\-*+]\s+(.*)/', $trim, $m)) {
+                    $flushPara();
+                    if ($inOL) { $htmlParts[] = '</ol>'; $inOL = false; }
+                    if (!$inUL) { $htmlParts[] = '<ul>'; $inUL = true; }
+                    $htmlParts[] = '<li>' . $renderBold($m[1]) . '</li>';
+                    continue;
+                  }
+
+                  // Ordered list item
+                  if (preg_match('/^(\d+)\.\s+(.*)/', $trim, $m)) {
+                    $flushPara();
+                    if ($inUL) { $htmlParts[] = '</ul>'; $inUL = false; }
+                    if (!$inOL) { $htmlParts[] = '<ol>'; $inOL = true; }
+                    $htmlParts[] = '<li>' . $renderBold($m[2]) . '</li>';
+                    continue;
+                  }
+
+                  // Paragraph line
+                  $paraLines[] = $renderBold($trim);
+                }
+
+                $flushPara();
+                $closeLists();
+                echo implode("\n", $htmlParts);
               ?>
             </div>
             <div class="message-actions">
@@ -1349,7 +1377,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="message">
           <div class="message-header">
             <div class="message-avatar ai-avatar">🤖</div>
-            <div class="message-role">Gemini AI</div>
+            <div class="message-role">AI</div>
           </div>
           <div class="message-content">
             ⏳ Đang xử lý yêu cầu của bạn...<br>
@@ -1373,7 +1401,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           } else if (seconds < 60) {
             loadingText.textContent = '🔍 Đang phân tích nội dung...';
           } else {
-            loadingText.textContent = '✨ Đang tạo bài học với Gemini AI...';
+            loadingText.textContent = '✨ Đang tạo bài học với AI...';
           }
         }
       }, 10000);

@@ -1,346 +1,98 @@
-<<<<<<< HEAD
-Tuyệt vời! Dựa vào key points bạn cung cấp, tôi sẽ xây dựng một bài học chi tiết về `export default` trong JavaScript, giúp bạn nắm vững kiến thức này một cách toàn diện.
-
-# 📚 Export Default trong JavaScript: Xuất Giá Trị Mặc Định
-
-## 🎯 MỤC TIÊU HỌC TẬP
-
-Sau khi hoàn thành bài học này, bạn sẽ có thể:
-
-1.  Hiểu rõ khái niệm `export default` trong JavaScript.
-2.  Sử dụng `export default` để xuất một giá trị mặc định từ một module.
-3.  Sử dụng `import` để nhập giá trị mặc định từ một module khác.
-4.  Phân biệt sự khác nhau giữa `export default` và `export` thông thường (named export).
-5.  Nắm vững các quy tắc và hạn chế khi sử dụng `export default`.
-6.  Đổi tên giá trị mặc định khi import để phù hợp với ngữ cảnh sử dụng.
-=======
-# Nhật ký tình yêu: Đau thương, nhớ nhung và những lời tự thú
+# Bí Ẩn Triều Đinh, Tiền Lê: Quyền Lực, Âm Mưu và Lịch Sử Bị Che Giấu
 
 ## MỤC TIÊU HỌC TẬP
 
-Sau bài học này, bạn sẽ:
-
-1.  Hiểu được những cung bậc cảm xúc phức tạp trong tình yêu, bao gồm đau thương, nhớ nhung và sự hối hận.
-2.  Nhận diện được những dấu hiệu của sự tổn thương và thất vọng trong một mối quan hệ.
-3.  Phân tích được những sai lầm có thể dẫn đến sự tan vỡ trong tình yêu.
-4.  Suy ngẫm về trách nhiệm cá nhân trong việc xây dựng và duy trì một mối quan hệ bền vững.
-5.  Học cách đối diện với nỗi đau và tìm kiếm sự chữa lành sau khi chia tay.
-6.  Rút ra những bài học kinh nghiệm cho những mối quan hệ tương lai.
->>>>>>> fork/main
+*   Hiểu được bối cảnh lịch sử phức tạp cuối triều Đinh và đầu triều Tiền Lê.
+*   Phân tích các yếu tố chính trị, quân sự và xã hội dẫn đến sự chuyển giao quyền lực từ nhà Đinh sang nhà Tiền Lê.
+*   Nhận diện các nhân vật lịch sử quan trọng và vai trò của họ trong giai đoạn này.
+*   Đánh giá tính xác thực của các nguồn sử liệu khác nhau và hiểu được những mâu thuẫn, thiếu hụt trong ghi chép lịch sử.
+*   Phân tích các âm mưu, tranh đoạt quyền lực và các yếu tố "bị che giấu" đằng sau các sự kiện lịch sử.
+*   Nắm bắt được những hệ quả của việc chuyển giao quyền lực đối với đất nước và triều đại tiếp theo.
 
 ## CÁC KHÁI NIỆM CHÍNH
 
-<<<<<<< HEAD
-*   **Module:** Một file JavaScript chứa các biến, hàm, class, hoặc các thành phần khác, được sử dụng để tổ chức code và tái sử dụng.
-*   **Export:** Quá trình đưa các thành phần từ một module ra ngoài để sử dụng trong các module khác.
-*   **Import:** Quá trình đưa các thành phần từ một module khác vào để sử dụng trong module hiện tại.
-*   **Default Export:** Một cách xuất một giá trị duy nhất từ một module. Giá trị này được coi là giá trị "mặc định" của module đó.
-*   **Named Export:** Một cách xuất nhiều giá trị từ một module, mỗi giá trị có một tên cụ thể.
-
-**Giải thích chi tiết:**
-
-*   **`export default` là gì?**
-
-    `export default` là một cú pháp trong JavaScript cho phép bạn chỉ định một giá trị duy nhất là "mặc định" cho một module. Giá trị này có thể là bất kỳ kiểu dữ liệu nào: biến, hàm, đối tượng, class...
-
-*   **Tại sao cần `export default`?**
-
-    Trong một module, thường có một thành phần quan trọng nhất, hoặc một thành phần mà người dùng sẽ sử dụng nhiều nhất. `export default` giúp người dùng dễ dàng tìm thấy và sử dụng thành phần này.
-
-*   **Sự khác biệt giữa `export default` và `export` (named export):**
-
-    *   `export default` chỉ được sử dụng một lần trong một module.
-    *   Khi `import` giá trị `default`, bạn có thể đặt tên tùy ý cho nó.
-    *   `export` (named export) cho phép xuất nhiều giá trị từ một module, mỗi giá trị có một tên cụ thể.
-    *   Khi `import` các giá trị `named`, bạn phải sử dụng đúng tên đã được export.
-=======
-*   **Đau thương:** Cảm giác mất mát, buồn bã sâu sắc khi một mối quan hệ kết thúc hoặc gặp phải những khó khăn lớn.
-    *   Ví dụ: Đau khổ khi bị phản bội, cảm giác trống rỗng khi chia tay.
-*   **Nhớ nhung:** Sự khao khát, mong muốn được quay lại những khoảnh khắc đẹp trong quá khứ với người mình yêu.
-    *   Ví dụ: Nhớ những buổi hẹn hò lãng mạn, những lời nói ngọt ngào, những kỷ niệm chung.
-*   **Tự thú (Lời tự thú):** Sự thừa nhận, bộc lộ những sai lầm, hối hận hoặc những cảm xúc sâu kín trong lòng.
-    *   Ví dụ: Tự thú về những lỗi lầm đã gây ra, bày tỏ sự hối hận vì đã không trân trọng mối quan hệ.
-*   **Hối hận:** Cảm giác tiếc nuối, buồn bã vì những gì đã làm hoặc không làm trong quá khứ, đặc biệt là những hành động gây ra tổn thương cho người khác.
-    *   Ví dụ: Hối hận vì đã không dành đủ thời gian cho người mình yêu, hối hận vì những lời nói làm tổn thương.
-*   **Trách nhiệm cá nhân:** Sự nhận thức và chấp nhận trách nhiệm về những hành động và quyết định của mình trong một mối quan hệ.
-    *   Ví dụ: Nhận trách nhiệm về việc không giao tiếp hiệu quả, không thấu hiểu đối phương.
-*   **Chữa lành:** Quá trình vượt qua nỗi đau, tìm lại sự bình yên và hạnh phúc sau khi trải qua những tổn thương trong tình yêu.
-    *   Ví dụ: Tìm kiếm sự hỗ trợ từ bạn bè, gia đình, hoặc chuyên gia tâm lý, tập trung vào việc phát triển bản thân.
->>>>>>> fork/main
+*   **Chính biến:** Sự thay đổi chính quyền, thường là đột ngột và bạo lực, liên quan đến việc lật đổ hoặc thay thế nhà cầm quyền.
+*   **Âm mưu:** Kế hoạch bí mật và thường bất hợp pháp để đạt được một mục tiêu nào đó, thường là chính trị.
+*   **Quyền lực:** Khả năng hoặc sức mạnh để kiểm soát, ảnh hưởng đến người khác hoặc các sự kiện.
+*   **Sử liệu:** Các tài liệu lịch sử, bao gồm sách sử, văn bản, hiện vật, được sử dụng để nghiên cứu và tái hiện quá khứ.
+*   **Tô vẽ chính trị:** Việc chỉnh sửa, thêm thắt hoặc bóp méo sự thật lịch sử để phục vụ mục đích chính trị của một cá nhân, phe phái hoặc triều đại.
+*   **Thanh trừng:** Loại bỏ một cách có hệ thống các đối thủ chính trị hoặc những người không trung thành.
 
 ## NỘI DUNG CHI TIẾT
 
-<<<<<<< HEAD
-### Phần 1: Xuất Giá Trị Mặc Định (Export Default)
+**Phần 1: Sự Sụp Đổ Của Triều Đinh và Cái Chết Bí Ẩn Của Đinh Tiên Hoàng**
 
-Cú pháp:
+Triều Đinh là triều đại đầu tiên thống nhất đất nước sau hàng trăm năm loạn lạc. Tuy nhiên, sự sụp đổ của triều Đinh diễn ra nhanh chóng và đầy bí ẩn.
 
-```javascript
-// Khai báo biến
-const myVariable = "Đây là biến mặc định";
+*   **Vụ Ám Sát Đinh Tiên Hoàng:** Đinh Tiên Hoàng và con trai Đinh Liễn bị ám sát bởi Đỗ Thích, một viên quan nhỏ. Lời khai của Đỗ Thích đầy mâu thuẫn và không thuyết phục, khiến nhiều người nghi ngờ rằng ông chỉ là một "vật hy sinh" trong một âm mưu lớn hơn.
+*   **Các Lực Lượng Liên Quan:**
+    *   **Phe ủng hộ Lê Hoàn:** Nhóm này có lợi ích rõ ràng khi triều đình lung lay bởi họ là thế lực duy nhất đủ sức giành quyền điều hành đất nước trước nguy cơ xâm lăng từ phương Bắc.
+    *   **Nhóm quan lại ủng hộ Đinh Liễn:** Những người từng được thái tử trọng dụng khi còn sống có thể muốn trả thù cho cái chết của Đinh Liễn.
+    *   **Các thế lực khác:** Các thế lực khác có thể muốn lợi dụng tình hình rối ren để giành quyền lực.
+*   **Sự Thiếu Vắng Thông Tin:** Sự thiếu vắng thông tin liên quan đến gia tộc họ Đinh sau biến cố 979 khiến giới nghiên cứu nghi ngờ về một cuộc thanh trừng âm thầm. Nhiều quan lại từng giữ vai trò then chốt bỗng nhiên không còn được sử nhắc tới.
+*   **Vai Trò Của Lịch Sử:** Những gì xảy ra thật sự trong phủ Hoa Lư năm ấy chỉ còn lại như những mảnh vụn bị lịch sử cố tình làm mờ.
 
-// Xuất biến mặc định
-export default myVariable;
+**Phần 2: Lê Hoàn Lên Ngôi: Âm Mưu Hay Uy Tín Quân Sự?**
 
-// Hoặc:
+Sau cái chết của Đinh Tiên Hoàng, Lê Hoàn, người đang nắm giữ binh quyền, đã lên ngôi vua, lập ra triều Tiền Lê.
 
-// Khai báo hàm
-function myFunction() {
-  console.log("Đây là hàm mặc định");
-}
+*   **Bối Cảnh Chính Trị:** Triều đình Đinh suy yếu sau vụ ám sát. Nguy cơ xâm lược từ nhà Tống ở phương Bắc ngày càng lớn.
+*   **Vai Trò Của Lê Hoàn:** Lê Hoàn được giao trọng trách nắm toàn quân. Ông được nhiều người tin rằng là người duy nhất có thể giữ vững cơ đồ.
+*   **Lê Hoàn Lên Ngôi:** Cuộc tranh đoạt quyền lực diễn ra. Cuối cùng, Lê Hoàn lên ngôi vua.
+*   **Câu Hỏi Lịch Sử:** Con đường lên ngôi của Lê Hoàn có phải là kết quả của âm mưu, hay là do uy tín quân sự và sự ủng hộ của triều thần? Phải chăng uy tín quân sự đã che khuất sự thật phía sau những ngày chính biến ở Hoa Lư?
 
-// Xuất hàm mặc định
-export default myFunction;
-```
+**Phần 3: Cuộc Kháng Chiến Chống Tống và Sự Khôn Ngoan Của Lê Hoàn**
 
-Lưu ý quan trọng:
+Lê Hoàn đã lãnh đạo quân đội đánh bại quân Tống xâm lược, củng cố vững chắc vị thế của triều Tiền Lê.
 
-*   Bạn chỉ có thể có một `export default` trong một module.
-*   Không thể sử dụng `export default` cùng dòng với khai báo `const`, `let`, `var`, hoặc `function`. Phải tách riêng khai báo và export.
+*   **Trận Chiến Với Quân Tống:** Ai cũng hiểu trận chiến này không chỉ là cuộc đọ sức giữa hai quốc gia mà còn là phép thử đầu tiên cho vị tướng, vị vua mới.
+*   **Chiến Thuật Của Lê Hoàn:** Lê Hoàn sử dụng chiến thuật phục kích, đánh vào điểm yếu của quân Tống, gây ra sự hỗn loạn và suy sụp tinh thần cho đối phương.
+*   **Sự Khôn Ngoan Của Lê Hoàn:** Mưu này không phải là mưu hèn yếu mà là sự khôn ngoan của người hiểu rất rõ điểm mạnh, điểm yếu của quân mình. Đây không phải là sự ngẫu hứng của chiến trường mà là kết quả của những giờ khắc nghiên cứu địa hình, chọn vị trí phục kích và điều chỉnh nhịp tấn công sao cho đúng thời điểm.
+*   **Ghi Nhận Của Sử Liệu:** Ngay cả sử liệu nhà Tống cũng phải ghi nhận rằng quân Đại Cồ Việt dùng kế kỳ lạ bé khiến tinh thần quân Tống suy sụp nhanh chóng.
 
-    Ví dụ (SAI):
+**Phần 4: Lê Long Đĩnh và Sự Phủ Bóng Đen Của Lịch Sử**
 
-    ```javascript
-    // SAI: Không được phép
-    export default const myVariable = "Giá trị";
-    ```
+Lê Long Đĩnh, vị vua cuối cùng của triều Tiền Lê, bị lịch sử "phán xét" nặng nề.
 
-    Ví dụ (ĐÚNG):
+*   **Hình Tượng Lê Long Đĩnh:** Lê Long Đĩnh thường được mô tả là một vị vua tàn bạo, xa hoa.
+*   **Mục Đích Chính Trị:** Một triều đại mới luôn muốn xóa đi ánh sáng của triều cũ và cách làm dễ nhất chính là phủ bóng đen lên hình tượng vị vua cuối cùng của triều đại đó.
+*   **Nạn Nhân Của Lịch Sử:** Lê Long Đĩnh không chỉ là một nhân vật bị lịch sử phán xét mà còn là nạn nhân của chính lịch sử ấy. Sự thật về ông bị chôn lấp dưới lớp bụi quyền lực.
+*   **Cái Chết Bí Ẩn:** Cái chết của Lê Long Đĩnh có thể là chìa khóa cho sự đổi ngôi đã được sắp đặt từ trước trong những năm cuối cùng của Triều Tiền Lê.
 
-    ```javascript
-    const myVariable = "Giá trị";
-    export default myVariable;
-    ```
+**Phần 5: Sự Trỗi Dậy Của Nhà Lý và Vai Trò Của Lý Công Uẩn**
 
-### Phần 2: Nhập Giá Trị Mặc Định (Import Default)
+Sự trỗi dậy của nhà Lý diễn ra trong bối cảnh triều Tiền Lê suy yếu.
 
-Cú pháp:
-
-```javascript
-// Nhập giá trị mặc định từ một module
-import myValue from './myModule.js';
-
-// Sử dụng giá trị đã nhập
-console.log(myValue);
-```
-
-Điểm quan trọng:
-
-*   Khi `import default`, bạn **không** cần sử dụng dấu ngoặc nhọn `{}`.
-*   Bạn có thể đặt tên **tùy ý** cho giá trị được import. Tên này không cần phải trùng với tên đã export.
-
-### Phần 3: Kết Hợp Export Default và Named Export (Lưu ý quan trọng)
-
-Nếu một module chứa cả `export default` và `export` (named export), bạn cần phải `import` chúng theo cách khác nhau.
-
-*   **Import Named Export:**
-
-    ```javascript
-    import { myVariable, myFunction } from './myModule.js';
-    ```
-
-*   **Import Default Export:**
-
-    ```javascript
-    import myDefaultValue from './myModule.js';
-    ```
-
-*   **Import cả Named và Default Export:**
-
-    ```javascript
-    import myDefaultValue, { myVariable, myFunction } from './myModule.js';
-    ```
-
-    Lưu ý: Thứ tự quan trọng!  `myDefaultValue` phải đứng trước.
-
-**Lưu ý ĐẶC BIỆT quan trọng:**  Nếu bạn sử dụng `import * as myModule from './myModule.js'` (import tất cả các export dưới dạng một đối tượng), thì `export default` **sẽ không** được bao gồm trong đối tượng `myModule`.  Bạn vẫn cần import riêng giá trị default nếu muốn sử dụng nó.
-
-### Phần 4: Đổi Tên Khi Import Default
-
-Vì bạn có thể đặt tên tùy ý khi import default, việc "đổi tên" thực chất là đặt một cái tên khác cho giá trị được import.
-
-```javascript
-// Export (myModule.js)
-export default function calculateTotal(a, b) {
-  return a + b;
-}
-
-// Import với tên khác (main.js)
-import sum from './myModule.js';
-
-// Sử dụng
-console.log(sum(5, 3)); // Output: 8
-```
-
-Trong ví dụ trên, hàm `calculateTotal` được export default từ `myModule.js`, nhưng khi import vào `main.js`, nó được đặt tên là `sum`.
-
-## 🔍 VÍ DỤ MINH HỌA
-
-**Ví dụ 1: Xuất và nhập một biến**
-
-`moduleA.js`:
-
-```javascript
-const message = "Xin chào từ module A!";
-export default message;
-```
-
-`main.js`:
-
-```javascript
-import greeting from './moduleA.js';
-console.log(greeting); // Output: Xin chào từ module A!
-```
-
-**Ví dụ 2: Xuất và nhập một hàm**
-
-`calculator.js`:
-
-```javascript
-function add(a, b) {
-  return a + b;
-}
-export default add;
-```
-
-`app.js`:
-
-```javascript
-import sum from './calculator.js';
-console.log(sum(10, 5)); // Output: 15
-```
-
-**Ví dụ 3: Kết hợp Default và Named Export**
-
-`utils.js`:
-
-```javascript
-export const PI = 3.14159;
-
-function calculateArea(radius) {
-  return PI * radius * radius;
-}
-
-export default calculateArea;
-```
-
-`index.js`:
-
-```javascript
-import area, { PI } from './utils.js';
-
-console.log("Diện tích hình tròn với bán kính 5:", area(5)); // Diện tích hình tròn với bán kính 5: 78.53975
-console.log("Giá trị PI:", PI); // Giá trị PI: 3.14159
-```
-
-## 📋 CÁC BƯỚC THỰC HIỆN
-
-1.  **Tạo hai file JavaScript:** Ví dụ: `moduleA.js` và `main.js`.
-2.  **Trong `moduleA.js`**, khai báo một biến, hàm, hoặc class, và sử dụng `export default` để xuất nó.
-3.  **Trong `main.js`**, sử dụng `import` để nhập giá trị từ `moduleA.js`.
-4.  **Sử dụng giá trị đã import** trong `main.js`.
-5.  **Chạy code** (ví dụ: trong trình duyệt hoặc Node.js) để kiểm tra kết quả.  Đảm bảo rằng bạn đã cấu hình môi trường để hỗ trợ ES modules (ví dụ: thêm `type="module"` vào thẻ `<script>` trong HTML, hoặc sử dụng bundler như Webpack, Parcel, Rollup).
-
-## 💡 TIPS & LƯU Ý
-
-*   **Luôn nhớ:** Chỉ có một `export default` trong một module.
-*   **Chọn tên có ý nghĩa:** Khi import default, hãy chọn một cái tên rõ ràng và dễ hiểu, phù hợp với ngữ cảnh sử dụng.
-*   **Sử dụng bundler:** Trong các dự án lớn, nên sử dụng bundler để quản lý các module và dependencies một cách hiệu quả.
-*   **Kiểm tra lỗi:** Nếu bạn gặp lỗi khi import hoặc export, hãy kiểm tra kỹ cú pháp và đảm bảo rằng các file được tham chiếu đúng cách.
-*   **Đọc tài liệu:** Luôn tham khảo tài liệu chính thức của JavaScript (MDN Web Docs) để hiểu rõ hơn về các khái niệm và cú pháp.
-
-## 📌 TÓM TẮT
-
-*   `export default` cho phép xuất một giá trị duy nhất từ một module.
-*   Bạn có thể đặt tên tùy ý cho giá trị được import default.
-*   Chỉ có một `export default` trong một module.
-*   Không thể sử dụng `export default` cùng dòng với khai báo biến hoặc hàm.
-*   Nếu một module có cả default và named export, cần import chúng theo cách khác nhau.
-*   Nếu dùng `import * as myModule`, export default không được bao gồm.
-*   Việc đổi tên khi import default thực chất là đặt tên khác cho giá trị đó.
-
-## ❓ CÂU HỎI ÔN TẬP
-
-1.  `export default` là gì? Tại sao chúng ta cần nó?
-2.  Sự khác biệt giữa `export default` và `export` (named export) là gì?
-3.  Làm thế nào để import một giá trị default từ một module?
-4.  Bạn có thể có bao nhiêu `export default` trong một module?
-5.  Nếu một module có cả default và named export, làm thế nào để import cả hai?
-6.  Khi nào bạn nên sử dụng `export default` thay vì `export` (named export)?
-7.  Giải thích ý nghĩa của việc "đổi tên" khi import default.
-
-Chúc bạn học tốt và áp dụng thành công kiến thức về `export default` trong các dự án JavaScript của mình!
-=======
-**Phần 1: Vòng luẩn quẩn của đau thương và nhớ nhung**
-
-Bài hát (dựa trên key points) mô tả một trạng thái cảm xúc giằng xé, luẩn quẩn giữa đau thương và nhớ nhung sau khi chia tay. Người hát đang cố gắng thoát khỏi những ký ức về người yêu cũ, nhưng dường như càng cố gắng, những ký ức đó lại càng trở nên ám ảnh.
-
-*   "Em muốn xuống nhưng em thì vẫn chưa lên": Diễn tả sự bế tắc, không thể thoát ra khỏi tình trạng hiện tại.
-*   "Mộng bao nhiêu cho trời cứ đen rồi đi lặng lẽ": Sự thất vọng, mất niềm tin vào tương lai tươi sáng.
-*   "Đừng cứ mãi vì vui kênh anh phải đau đầu": Nhắc nhở về những niềm vui đã qua, nhưng giờ đây chỉ mang lại đau khổ.
-*   "Từng dây phút qua trong bầu gia vì sao em giờ đang nơi đâu": Nỗi nhớ nhung da diết, sự cô đơn và lạc lõng.
-
-**Phần 2: Tự vấn và trách nhiệm cá nhân**
-
-Người hát tự vấn bản thân, tìm kiếm nguyên nhân dẫn đến sự tan vỡ của mối quan hệ. Anh nhận ra rằng có thể chính những sai lầm của mình đã đẩy người yêu ra xa.
-
-*   "Anh từ đáng lửa chiến bàn thân mình nguyên nhận lại do từng anh vẫn thể chẳng phối phát": Sự tự trách, nhận ra trách nhiệm của bản thân trong việc làm tổn thương mối quan hệ.
-*   "Người thương từ em mang đem như mương nồng": Sự trân trọng những gì người yêu đã mang đến.
-*   "Dừng như qua mọi mề tí ứng xa": Cảm giác xa cách, mất kết nối với người mình yêu.
-*   "Anh từ xây được quân thật chắc và chăm lòng em nhắm nhận": Sự cố gắng xây dựng mối quan hệ, nhưng có lẽ chưa đủ để giữ chân người mình yêu.
-
-**Phần 3: Lời tự thú và sự hối hận**
-
-Bài hát là một lời tự thú chân thành, bộc lộ những hối hận và những nỗi đau sâu kín trong lòng người hát. Anh nhận ra rằng mình đã không trân trọng mối quan hệ, và giờ đây anh phải đối diện với hậu quả.
-
-*   "Đừng phải chê nhà, đừng phải chê nhà em yêu giấu": Sự lo lắng, sợ hãi rằng người yêu sẽ đánh giá thấp anh.
-*   "Giờ sợ đi, qua thật trả mây làng qua trời gian cua hành": Nỗi sợ mất đi người mình yêu, sự hối hận vì đã không trân trọng thời gian bên nhau.
-*   "Vẫn như hành, do anh nên gần đừng đau về mào hôm nay": Sự tự trách, nhận ra rằng chính những hành động của mình đã gây ra đau khổ cho người yêu.
-*   "Để đê lâu, anh nên thấy chiến thuận và lôi chơi": Sự nhận thức muộn màng về những sai lầm của mình.
-
-**Phần 4: Tìm kiếm sự chữa lành**
-
-Mặc dù đau khổ và hối hận, người hát vẫn hy vọng vào một tương lai tươi sáng hơn. Anh nhận ra rằng mình cần phải học hỏi từ những sai lầm, tha thứ cho bản thân và tiếp tục bước tiếp.
-
-*   "Trong cái mặt quý, khi như cuộc đình của chúng ta": Sự trân trọng những kỷ niệm đẹp trong quá khứ.
-*   "Đừng đi tự bầu sâu": Lời khuyên đừng tự dằn vặt bản thân quá nhiều.
+*   **Sự Chuẩn Bị Âm Thầm:** Không ai biết chính xác phe họ Lý bắt đầu chuẩn bị từ khi nào, nhưng mọi dấu hiệu đều chỉ về cùng một hướng.
+*   **Lý Công Uẩn:** Bóng dáng của một con người vốn xuất thân không phải vương tộc lại dần nổi lên giữa những biến động chính trị ngột ngạt.
+*   **Câu Hỏi Lịch Sử:** Lý Công Uẩn có phải chỉ là người được thời thế đưa lên hay ông là người đã âm thầm dệt nên mạng lưới quyền lực suốt nhiều năm?
 
 ## VÍ DỤ MINH HỌA
 
-Hãy tưởng tượng một cặp đôi yêu nhau sâu đậm. Tuy nhiên, do áp lực công việc, người bạn trai không dành đủ thời gian cho bạn gái, thường xuyên đi sớm về muộn. Dần dần, bạn gái cảm thấy cô đơn và tủi thân. Cô cố gắng chia sẻ với bạn trai, nhưng anh lại cho rằng cô quá nhạy cảm và không hiểu cho anh. Sau một thời gian, bạn gái quyết định chia tay. Lúc này, người bạn trai mới nhận ra rằng anh đã sai lầm. Anh hối hận vì đã không dành đủ thời gian và sự quan tâm cho bạn gái, vì đã không lắng nghe và thấu hiểu cô. Anh tự trách mình vì đã đánh mất một người yêu thương mình thật lòng.
-
-## CÁC BƯỚC THỰC HIỆN (Trong trường hợp này là các bước để đối diện và vượt qua nỗi đau)
-
-1.  **Cho phép bản thân cảm nhận nỗi đau:** Đừng cố gắng kìm nén hoặc trốn tránh cảm xúc. Hãy cho phép bản thân khóc, buồn bã, tức giận, hoặc bất kỳ cảm xúc nào khác.
-2.  **Chia sẻ với người mình tin tưởng:** Nói chuyện với bạn bè, gia đình, hoặc chuyên gia tâm lý về những gì mình đang trải qua. Việc chia sẻ có thể giúp bạn cảm thấy nhẹ nhõm hơn và nhận được sự hỗ trợ cần thiết.
-3.  **Tập trung vào việc chăm sóc bản thân:** Dành thời gian cho những hoạt động mà bạn yêu thích, ăn uống lành mạnh, tập thể dục, ngủ đủ giấc.
-4.  **Tha thứ cho bản thân và người khác:** Tha thứ cho bản thân vì những sai lầm đã mắc phải, và tha thứ cho người yêu cũ vì những tổn thương họ đã gây ra.
-5.  **Tìm kiếm ý nghĩa trong trải nghiệm:** Suy ngẫm về những gì bạn đã học được từ mối quan hệ đã qua, và sử dụng những bài học đó để xây dựng những mối quan hệ tốt đẹp hơn trong tương lai.
+*   **Vụ ám sát Đinh Tiên Hoàng:** Tương tự như vụ ám sát Julius Caesar trong lịch sử La Mã cổ đại, vụ ám sát Đinh Tiên Hoàng là một ví dụ về việc một sự kiện bạo lực có thể thay đổi hoàn toàn cục diện chính trị.
+*   **Sự lên ngôi của Lê Hoàn:** So sánh với việc Augustus lên ngôi sau cái chết của Caesar, Lê Hoàn cũng tận dụng tình hình rối ren để nắm giữ quyền lực.
+*   **Hình tượng Lê Long Đĩnh:** Tương tự như hình ảnh của các vị vua cuối cùng của các triều đại khác thường bị bôi nhọ, Lê Long Đĩnh cũng chịu chung số phận.
 
 ## TIPS & LƯU Ý
 
-*   Đừng so sánh bản thân với người khác. Mỗi người có một cách đối diện với nỗi đau khác nhau.
-*   Đừng cố gắng quên đi quá khứ. Thay vào đó, hãy chấp nhận nó và học cách sống chung với nó.
-*   Hãy kiên nhẫn với bản thân. Quá trình chữa lành cần thời gian.
-*   Nếu bạn cảm thấy quá khó khăn để vượt qua nỗi đau một mình, hãy tìm kiếm sự giúp đỡ từ chuyên gia tâm lý.
+*   **Đối Chiếu Sử Liệu:** Để hiểu rõ các sự kiện lịch sử, cần đối chiếu nhiều nguồn sử liệu khác nhau, bao gồm Đại Việt sử ký toàn thư, Việt sử lược và Khâm định Việt sử thông giám cương mục.
+*   **Phân Tích Khách Quan:** Cần phân tích các sự kiện lịch sử một cách khách quan, không bị ảnh hưởng bởi các quan điểm chính trị hoặc cảm xúc cá nhân.
+*   **Cẩn Thận Với Truyền Thuyết:** Truyền thuyết có thể phản ánh niềm tin chung của dân gian, nhưng không phải lúc nào cũng chính xác về mặt lịch sử.
 
 ## TÓM TẮT
 
-1.  Tình yêu là một hành trình đầy những cung bậc cảm xúc, bao gồm cả niềm vui và nỗi đau.
-2.  Đau thương và nhớ nhung là những cảm xúc phổ biến sau khi chia tay.
-3.  Nhận diện và chấp nhận trách nhiệm cá nhân là bước quan trọng để học hỏi từ những sai lầm trong quá khứ.
-4.  Tha thứ cho bản thân và người khác là chìa khóa để vượt qua nỗi đau và tìm lại sự bình yên.
-5.  Quá trình chữa lành cần thời gian và sự kiên nhẫn.
-6.  Tìm kiếm sự hỗ trợ từ người khác có thể giúp bạn vượt qua những giai đoạn khó khăn.
-7.  Hãy luôn trân trọng bản thân và tin vào một tương lai tươi sáng hơn.
+*   Sự sụp đổ của triều Đinh và cái chết của Đinh Tiên Hoàng đầy bí ẩn và có thể liên quan đến âm mưu chính trị.
+*   Lê Hoàn lên ngôi vua và đánh bại quân Tống xâm lược, củng cố vị thế của triều Tiền Lê.
+*   Lê Long Đĩnh, vị vua cuối cùng của triều Tiền Lê, bị lịch sử "phán xét" nặng nề.
+*   Sự trỗi dậy của nhà Lý diễn ra trong bối cảnh triều Tiền Lê suy yếu.
+*   Để hiểu rõ lịch sử, cần đối chiếu nhiều nguồn sử liệu và phân tích khách quan.
 
 ## CÂU HỎI ÔN TẬP
 
-1.  Bạn hiểu như thế nào về khái niệm "đau thương" trong tình yêu? Hãy cho ví dụ minh họa.
-2.  Tại sao việc nhận diện trách nhiệm cá nhân lại quan trọng trong một mối quan hệ?
-3.  Bạn nghĩ gì về việc tha thứ cho bản thân và người khác sau khi chia tay?
-4.  Những yếu tố nào có thể giúp bạn vượt qua nỗi đau sau khi chia tay?
-5.  Bạn có thể rút ra bài học gì từ bài hát "Nhật ký tình yêu" về việc xây dựng và duy trì một mối quan hệ bền vững?
-6.  Theo bạn, làm thế nào để trân trọng những kỷ niệm đẹp trong quá khứ mà không để chúng ám ảnh mình?
-7.  Bạn có lời khuyên nào dành cho những người đang trải qua giai đoạn khó khăn sau khi chia tay?
->>>>>>> fork/main
+*   Những yếu tố nào dẫn đến sự sụp đổ của triều Đinh?
+*   Vai trò của Lê Hoàn trong cuộc kháng chiến chống Tống là gì?
+*   Vì sao Lê Long Đĩnh bị lịch sử "phán xét" nặng nề?
+*   Lý Công Uẩn đóng vai trò gì trong việc thành lập nhà Lý?
+*   Hãy so sánh và đối chiếu các nguồn sử liệu khác nhau về giai đoạn lịch sử này.
+*   Bạn nghĩ ai là người có lợi nhất từ cái chết của Đinh Tiên Hoàng? Tại sao?
+*   Theo bạn, điều gì là quan trọng nhất khi nghiên cứu lịch sử?
