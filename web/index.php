@@ -1020,9 +1020,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $inUL = false; $inOL = false; $paraLines = [];
 
                 $renderBold = function($text) {
-                  return preg_replace_callback('/\*\*(.+?)\*\*/s', function($m){
-                    return '<strong>' . htmlspecialchars($m[1], ENT_QUOTES, 'UTF-8') . '</strong>';
-                  }, htmlspecialchars($text, ENT_QUOTES, 'UTF-8'));
+                  // First escape HTML
+                  $escaped = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+                  // Then replace **text** with <strong>text</strong>
+                  return preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $escaped);
                 };
 
                 $flushPara = function() use (&$paraLines, &$htmlParts) {

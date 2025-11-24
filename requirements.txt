@@ -4,3 +4,6 @@ torch
 google-generativeai
 yt-dlp
 faster-whisper
+keybert
+sentence-transformers
+sentencepiece
