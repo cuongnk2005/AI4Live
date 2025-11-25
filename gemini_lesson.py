@@ -90,11 +90,20 @@ def download_audio(video_id: str) -> str:
     tmp_dir = tempfile.mkdtemp(prefix="yt_audio_")
     out_path = os.path.join(tmp_dir, "audio.m4a")
     base_cmd = ["-f", "bestaudio/best", "-x", "--audio-format", "m4a", "-o", out_path, url]
+    
+    # Get Python Scripts directory for yt-dlp.exe
+    python_dir = os.path.dirname(sys.executable)
+    scripts_dir = os.path.join(python_dir, "Scripts")
+    ytdlp_exe = os.path.join(scripts_dir, "yt-dlp.exe")
+    
     candidates = [
-        ["yt-dlp"],
-        [sys.executable, "-m", "yt_dlp"],
-        ["py", "-3", "-m", "yt_dlp"],
+        ["yt-dlp"],  # Try from PATH
+        [ytdlp_exe] if os.path.exists(ytdlp_exe) else [],  # Try Scripts folder
+        [sys.executable, "-m", "yt_dlp"],  # Try as module
+        ["py", "-3", "-m", "yt_dlp"],  # Try with py launcher
     ]
+    candidates = [c for c in candidates if c]  # Remove empty lists
+    
     print("🎧 Đang tải audio bằng yt-dlp...")
     last_err = None
     for prefix in candidates:
@@ -112,7 +121,8 @@ def transcribe_with_whisper(audio_path: str, language: str) -> str:
     try:
         from faster_whisper import WhisperModel
     except ImportError:
-        raise RuntimeError("Thiếu faster-whisper. Cài: pip install faster-whisper")
+        raise RuntimeError("⚠️ Thiếu faster-whisper (không tương thích Python 3.14).\n"
+                         "Chỉ dùng video có phụ đề hoặc cài Python 3.11-3.12 để dùng ASR.")
     print("🗣️ Đang nhận diện giọng nói (ASR)...")
     model = WhisperModel("base", device="cpu", compute_type="int8")
     segments, _ = model.transcribe(
@@ -138,7 +148,7 @@ def fetch_transcript_with_asr(video_id: str, language: str) -> str:
     finally:
         if audio_path:
             shutil.rmtree(os.path.dirname(audio_path), ignore_errors=True)
-
+# tóm tắt cục bôj
 
 def generate_summary_local(transcript: str, language: str, max_length: int = 500) -> str:
     """
@@ -199,64 +209,67 @@ def generate_summary_local(transcript: str, language: str, max_length: int = 500
         return ""
 
 
-def extract_key_points_keybert(transcript: str, max_points: int = 50, num_keywords: int = 30) -> Tuple[List[str], List[Tuple[str, float]]]:
+def extract_key_points_keybert(
+    transcript: str,
+    max_points: int = 50,
+    num_keywords: int = 50
+) -> Tuple[List[str], List[str]]:
+
     """
-    Trích xuất key points bằng KeyBERT:
-    1. Dùng KeyBERT để trích keyword/phrase quan trọng
-    2. Tìm các câu chứa những keyword đó
-    3. Trả về danh sách câu được xếp hạng theo mức độ liên quan
+    Trích xuất keywords và key sentences bằng KeyBERT.
+    Trả về: (keyword_list, key_sentences)
+    - keyword_list: Danh sách từ khóa quan trọng (giúp Gemini hiểu chủ đề)
+    - key_sentences: Danh sách câu quan trọng (giúp Gemini bám sát nội dung video)
     """
+
+    # Kiểm tra thư viện
     try:
         from keybert import KeyBERT
         from sentence_transformers import SentenceTransformer
     except ImportError:
         print("⚠️ Thiếu KeyBERT hoặc sentence-transformers")
         print("📦 Cài đặt: pip install keybert sentence-transformers")
-        print("➡️ Fallback về phương pháp heuristic...\n")
-        return extract_key_points_heuristic(transcript, max_points)
-    
-    print("🔎 Đang trích xuất key points bằng KeyBERT...")
-    print("⏰ Lần đầu: Tải model ~120MB, mất 1-3 phút. Lần sau sẽ nhanh hơn...\n")
-    
-    # Tách câu
-    sentences = re.split(r'[.!?]+', transcript)
-    sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
-    
-    if len(sentences) == 0:
-        print("⚠️ Không có câu hợp lệ")
-        return []
-    
-    # Load model embedding
-    print("📥 Đang tải model embedding (sentence-transformers/all-MiniLM-L6-v2)...")
+        raise RuntimeError("Thiếu thư viện cần thiết cho KeyBERT")
+
     import time
-    start_time = time.time()
-    embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-    elapsed = time.time() - start_time
-    print(f"✅ Model đã load ({elapsed:.1f}s)\n")
-    kw_model = KeyBERT(model=embedding_model)
-    
-    # Trích xuất keywords/phrases
-    print(f"🔑 Đang trích xuất {num_keywords} keywords...")
+
+    print("📌 Sử dụng KeyBERT\n")
+    print("🔎 Đang trích xuất keyword bằng KeyBERT...")
+
+    # Load model
+    print("📥 Đang tải model embedding (sentence-transformers/all-MiniLM-L6-v2)...")
+    start = time.time()
+    model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+    print(f"✅ Model đã load ({time.time() - start:.1f}s)\n")
+
+    # Khởi tạo KeyBERT
+    kw_model = KeyBERT(model=model)
+
+    # Trích xuất keyword
+    print(f"🔑 Đang trích {num_keywords} keywords...\n")
     keywords = kw_model.extract_keywords(
         transcript,
-        keyphrase_ngram_range=(1, 3),  # Cho phép 1-3 từ
+        keyphrase_ngram_range=(1, 3),
         stop_words='english',
         top_n=num_keywords,
-        use_mmr=True,  # Maximal Marginal Relevance để đa dạng hóa
+        use_mmr=True,
         diversity=0.7
     )
-    
-    # Hiển thị danh sách keywords với điểm số
-    print(f"✅ Đã trích {len(keywords)} keywords quan trọng nhất:\n")
-    for i, (keyword, score) in enumerate(keywords, 1):
-        print(f"   {i:2d}. {keyword:30s} (điểm: {score:.3f})")
-    print()
-    
-    # Lấy danh sách keyword (bỏ score)
+
+    # Convert -> keyword_list
     keyword_list = [kw for kw, score in keywords]
+
+    # In ra cho người dùng xem
+    print("📌 KEYWORD LIST:")
+    for i, kw in enumerate(keyword_list, 1):
+        print(f"{i:2d}. {kw}")
+
+    # ===== BƯỚC 2: TRÍCH XUẤT CÂU QUAN TRỌNG =====
+    print("\n📝 Đang tính điểm cho các câu dựa trên keywords...\n")
     
-    # Trả về cả keywords với score để có thể lưu file
-    return keyword_list, keywords
+    # Tách transcript thành câu
+    sentences = re.split(r'[.!?]+', transcript)
+    sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
     
     # Tính điểm cho mỗi câu dựa trên số lượng keywords xuất hiện
     scored_sentences = []
@@ -285,50 +298,70 @@ def extract_key_points_keybert(transcript: str, max_points: int = 50, num_keywor
     # Sắp xếp theo điểm giảm dần
     scored_sentences.sort(reverse=True, key=lambda x: x[0])
     
-    # Lấy top N key points
-    key_points = [sent for score, sent, kws in scored_sentences[:max_points]]
+    # Lấy top N key sentences
+    key_sentences = [sent for score, sent, kws in scored_sentences[:max_points]]
     
-    print(f"✅ Đã trích {len(key_points)} key points từ KeyBERT\n")
-    return key_points, keywords
+    print(f"✅ Đã trích {len(key_sentences)} câu quan trọng từ KeyBERT\n")
+    
+    return keyword_list, key_sentences
 
+def save_keyword_list(keyword_list, filename="keywords.txt"):
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write("KEYWORDS (only text):\n")
+        f.write("======================\n\n")
+        
+        for i, kw in enumerate(keyword_list, 1):
+            f.write(f"{i:2d}. {kw}\n")
 
-def extract_key_points_heuristic(transcript: str, max_points: int = 50) -> List[str]:
-    """
-    Phương pháp heuristic cũ (fallback khi không có KeyBERT)
-    """
-    print("🔎 Đang trích xuất key points (heuristic)...")
-    sentences = re.split(r'[.!?]+', transcript)
-    sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
-    important = [
-        'important', 'key', 'main', 'essential', 'critical', 'must', 'should',
-        'step', 'first', 'second', 'next', 'then', 'finally',
-        'example', 'for instance', 'such as', 'like',
-        'because', 'reason', 'why', 'how', 'what', 'when', 'where',
-        'define', 'definition', 'means', 'refers to',
-        'remember', 'note', 'tip', 'trick', 'advice',
-        'quan trọng', 'chính', 'cần', 'phải', 'nên',
-        'bước', 'đầu tiên', 'thứ hai', 'tiếp theo', 'cuối cùng',
-        'vì', 'tại sao', 'như thế nào', 'cái gì', 'khi nào',
-    ]
-    scored = []
-    for sentence in sentences:
-        score = 0
-        lower = sentence.lower()
-        for kw in important:
-            if kw in lower:
-                score += 1
-        wc = len(sentence.split())
-        if 10 <= wc <= 40:
-            score += 2
-        elif wc < 10:
-            score -= 1
-        if re.search(r'\d+', sentence):
-            score += 1
-        scored.append((score, sentence))
-    scored.sort(reverse=True, key=lambda x: x[0])
-    key_points = [s for sc, s in scored[:max_points] if sc > 0]
-    print(f"✅ Đã trích {len(key_points)} key points\n")
-    return key_points
+    print(f"📁 Đã lưu keyword_list vào file: {filename}")
+
+def save_key_sentences(key_sentences, filename="key_sentences.txt"):
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write("KEY SENTENCES (câu quan trọng):\n")
+        f.write("====================================\n\n")
+        
+        for i, sent in enumerate(key_sentences, 1):
+            f.write(f"{i:2d}. {sent}\n\n")
+
+    print(f"📁 Đã lưu key_sentences vào file: {filename}")
+
+# def extract_key_points_heuristic(transcript: str, max_points: int = 50) -> List[str]:
+#     """
+#     Phương pháp heuristic cũ (fallback khi không có KeyBERT)
+#     """
+#     print("🔎 Đang trích xuất key points (heuristic)...")
+#     sentences = re.split(r'[.!?]+', transcript)
+#     sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
+#     important = [
+#         'important', 'key', 'main', 'essential', 'critical', 'must', 'should',
+#         'step', 'first', 'second', 'next', 'then', 'finally',
+#         'example', 'for instance', 'such as', 'like',
+#         'because', 'reason', 'why', 'how', 'what', 'when', 'where',
+#         'define', 'definition', 'means', 'refers to',
+#         'remember', 'note', 'tip', 'trick', 'advice',
+#         'quan trọng', 'chính', 'cần', 'phải', 'nên',
+#         'bước', 'đầu tiên', 'thứ hai', 'tiếp theo', 'cuối cùng',
+#         'vì', 'tại sao', 'như thế nào', 'cái gì', 'khi nào',
+#     ]
+#     scored = []
+#     for sentence in sentences:
+#         score = 0
+#         lower = sentence.lower()
+#         for kw in important:
+#             if kw in lower:
+#                 score += 1
+#         wc = len(sentence.split())
+#         if 10 <= wc <= 40:
+#             score += 2
+#         elif wc < 10:
+#             score -= 1
+#         if re.search(r'\d+', sentence):
+#             score += 1
+#         scored.append((score, sentence))
+#     scored.sort(reverse=True, key=lambda x: x[0])
+#     key_points = [s for sc, s in scored[:max_points] if sc > 0]
+#     print(f"✅ Đã trích {len(key_points)} key points\n")
+#     return key_points
 
 
 def generate_title_with_gemini(key_points: List[str], language: str, api_key: str) -> str:
@@ -492,32 +525,14 @@ def main() -> int:
     parser.add_argument("--output", "-o", help="File dau ra (neu khong chi dinh, chi in ra)")
     parser.add_argument("--transcript-json", help="Duong dan file JSON transcript neu co san")
     parser.add_argument("--max-points", type=int, default=50, help="So luong key points toi da (mac dinh 50)")
-    parser.add_argument("--num-keywords", type=int, default=30, help="So luong keywords trích xuất bởi KeyBERT (mac dinh 30)")
-    parser.add_argument("--keybert", action="store_true", help="Su dung KeyBERT de trich xuat key points (mac dinh)")
-    parser.add_argument("--no-keybert", action="store_true", help="Su dung phuong phap heuristic thay vi KeyBERT")
+    parser.add_argument("--num-keywords", type=int, default=50, help="So luong keywords trích xuất bởi KeyBERT (mac dinh 50)")
     parser.add_argument("--enrich", action="store_true", help="Tao summary cuc bo bang BARTpho (VI) hoac mT5 (EN)")
-    parser.add_argument("--save-keywords", help="Luu keywords ra file text (vd: keywords.txt)")
     args = parser.parse_args()
 
     api_key = args.api_key or os.getenv("GEMINI_API_KEY") or DEFAULT_GEMINI_API_KEY
     if not api_key:
         print("Thiếu Gemini API key! Set GEMINI_API_KEY hoặc --api-key.")
         return 1
-
-    print("=" * 70)
-    print("TAO BAI HOC TU YOUTUBE BANG GEMINI AI")
-    print("=" * 70)
-    print()
-    
-    # Hiển thị cảnh báo nếu dùng các tính năng chậm
-    if args.enrich:
-        print("⚠️  CHẾ ĐỘ ENRICH: Có thể mất 3-10 phút (tải + chạy BARTpho/mT5)")
-    if not args.no_keybert:
-        print("⚠️  KEYBERT: Lần đầu tải model ~120MB, mất 1-3 phút")
-    if not args.transcript_json:
-        print("⚠️  Có thể dùng ASR nếu không có phụ đề (chậm hơn)")
-    print()
-
     try:
         # Bước 1: Lấy video ID
         video_id = extract_video_id(args.url)
@@ -533,49 +548,29 @@ def main() -> int:
                 print("➡ Thử nhận diện giọng nói từ audio (ASR fallback)...")
                 transcript = fetch_transcript_with_asr(video_id, args.language)
 
-        # Bước 4: Trích xuất key points
-        keywords_data = None
-        if args.no_keybert:
-            print("📌 Sử dụng phương pháp heuristic\n")
-            key_points = extract_key_points_heuristic(transcript, args.max_points)
-        else:
-            print("📌 Sử dụng KeyBERT\n")
-            key_points, keywords_data = extract_key_points_keybert(transcript, args.max_points, args.num_keywords)
-            
-            # Lưu keywords ra file nếu được yêu cầu
-            if args.save_keywords and keywords_data:
-                from datetime import datetime
-                with open(args.save_keywords, "w", encoding="utf-8") as f:
-                    f.write("=" * 70 + "\n")
-                    f.write(f"KEYWORDS TRÍCH XUẤT TỪ VIDEO (Tổng: {len(keywords_data)})\n")
-                    f.write("=" * 70 + "\n\n")
-                    for i, (keyword, score) in enumerate(keywords_data, 1):
-                        f.write(f"{i:3d}. {keyword:40s} (điểm: {score:.4f})\n")
-                    f.write("\n" + "=" * 70 + "\n")
-                    f.write(f"Tổng số keywords: {len(keywords_data)}\n")
-                    f.write(f"Ngày tạo: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                print(f"💾 Đã lưu keywords vào: {args.save_keywords}\n")
+        # Bước 4: Trích xuất key points với KeyBERT
+        print("📌 Sử dụng KeyBERT\n")
+        keyword_list, key_sentences = extract_key_points_keybert(transcript, args.max_points, args.num_keywords)
+        
+        # Tự động lưu keywords và key_sentences
+        save_keyword_list(keyword_list, "keywords.txt")
+        save_key_sentences(key_sentences, "key_sentences.txt")
         
         # Bước 5: (Tùy chọn) Tạo summary cục bộ nếu có --enrich
+        # summary = None
+        # if args.enrich:
+        #     print("🌟 Chế độ ENRICH: Tạo summary cục bộ\n")
+        #     summary = generate_summary_local(transcript, args.language)
         summary = None
-        if args.enrich:
-            print("🌟 Chế độ ENRICH: Tạo summary cục bộ\n")
-            summary = generate_summary_local(transcript, args.language)
-        
-        # Bước 6: Gọi Gemini
-        # 6a. Tạo tiêu đề
-        title = generate_title_with_gemini(key_points, args.language, api_key)
-        
-        # 6b. Tạo bài giảng đầy đủ (với summary nếu có)
-        lesson = generate_lesson_with_gemini(title, key_points, args.language, api_key, summary)
 
-        print("=" * 70)
-        print("BAI HOC HOAN CHINH")
-        print("=" * 70)
-        print()
-        print(lesson)
-        print()
-        print("=" * 70)
+        # Bước 6: Gọi Gemini
+        # 6a. Tạo tiêu đề (dùng keywords để hiểu chủ đề)
+        title = generate_title_with_gemini(keyword_list, args.language, api_key)
+        
+        # 6b. Tạo bài giảng đầy đủ (dùng key_sentences để bám sát nội dung video)
+        lesson = generate_lesson_with_gemini(title, key_sentences, args.language, api_key, summary)
+
+     
 
         if args.output:
             with open(args.output, "w", encoding="utf-8") as f:
