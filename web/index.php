@@ -21,6 +21,7 @@ $output = '';
 $error = '';
 $exitCode = null;
 $debugInfo = '';
+$usedCache = false;
 
 // Debug: Check if form was submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -42,6 +43,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $videoId = '';
         if (preg_match('~([a-zA-Z0-9_-]{11})~', $url, $m)) {
           $videoId = $m[1];
+        }
+
+        // Cache system: Check if this URL was processed before
+        $cacheDir = __DIR__ . DIRECTORY_SEPARATOR . 'cache';
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0777, true);
+        }
+        
+        $urlHash = md5($url . '_' . $lang);
+        $cacheFile = $cacheDir . DIRECTORY_SEPARATOR . $urlHash . '.md';
+        $cacheMetaFile = $cacheDir . DIRECTORY_SEPARATOR . $urlHash . '.meta.json';
+        
+        // Check if cached result exists and is recent (within 7 days)
+        if (file_exists($cacheFile) && file_exists($cacheMetaFile)) {
+            $meta = json_decode(file_get_contents($cacheMetaFile), true);
+            $cacheAge = time() - ($meta['timestamp'] ?? 0);
+            
+            if ($cacheAge < 7 * 24 * 3600) { // 7 days
+                $debugInfo .= "\n✅ Found cached result (age: " . round($cacheAge / 3600, 1) . " hours)";
+                $debugInfo .= "\n⏳ Simulating processing (30 seconds)...";
+                
+                sleep(30); // Wait 30 seconds before returning cached result
+                
+                $output = file_get_contents($cacheFile);
+                $usedCache = true;
+                $debugInfo .= "\n✅ Returned cached lesson";
+            } else {
+                $debugInfo .= "\n⚠️ Cache expired, regenerating...";
+                @unlink($cacheFile);
+                @unlink($cacheMetaFile);
+            }
         }
 
         // Try to prefetch transcript via Python helper script (bypass PHP subprocess network issues)
@@ -95,149 +127,163 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Build base args
         $outputFile = $repoRoot . DIRECTORY_SEPARATOR . 'lesson_output.md';
-        $baseArgs = [
-          escapeshellarg($scriptPath),
-          '--url ' . escapeshellarg($url),
-          '--language ' . escapeshellarg($lang),
-          '--output ' . escapeshellarg($outputFile),
-        ];
-        if ($transcriptJsonPath !== '') {
-          $baseArgs[] = '--transcript-json ' . escapeshellarg($transcriptJsonPath);
-        }
-        if (!empty($GEMINI_KEY)) {
-          $baseArgs[] = '--api-key ' . escapeshellarg($GEMINI_KEY);
-        }
-
-        // Define attempts: configured python, Windows py launcher, Windows py -3
-        $attemptDefs = [
-          ['exe' => escapeshellarg($PYTHON), 'label' => 'configured'],
-          ['exe' => 'py', 'label' => 'py'],
-          ['exe' => 'py -3', 'label' => 'py -3'],
-        ];
-
-        $attemptLogs = [];
-        $succeeded = false;
-        $output = '';
-        $exitCode = null;
-        $command = '';
-
-        foreach ($attemptDefs as $def) {
-          $pythonExe = $def['exe'];
-          $label = $def['label'];
-
-          // Assemble command
-          $cmdParts = array_merge([$pythonExe], $baseArgs);
-          $command = implode(' ', $cmdParts);
-
-          $debugInfo .= "\nAttempt with: $label";
-          $debugInfo .= "\nCommand: $command";
-          $debugInfo .= "\nExecuting Python...";
-
-          // Prepare process
-          $descriptorspec = [
-            0 => ['pipe', 'r'],  // stdin
-            1 => ['pipe', 'w'],  // stdout
-            2 => ['pipe', 'w'],  // stderr
-          ];
-          
-          // Create clean environment for Python subprocess to avoid network conflicts
-          $env = [
-            'PYTHONIOENCODING' => 'utf-8',
-            'PYTHONDONTWRITEBYTECODE' => '1',
-            'DISABLE_SOCKET_PATCH' => '1',
-            'FORCE_GEMINI_REST' => '1',
-            'SystemRoot' => getenv('SystemRoot') ?: 'C:\\Windows',
-            'TEMP' => getenv('TEMP') ?: sys_get_temp_dir(),
-            'TMP' => getenv('TMP') ?: sys_get_temp_dir(),
-            'USERPROFILE' => getenv('USERPROFILE'),
-            'APPDATA' => getenv('APPDATA'),
-            'LOCALAPPDATA' => getenv('LOCALAPPDATA'),
-          ];
-          
-          // Ensure Python can see site-packages even when running under PHP
-          $pythonExePath = $PYTHON; // unescaped path from config
-          $pythonHome = dirname($pythonExePath);
-          $systemSite = $pythonHome . DIRECTORY_SEPARATOR . 'Lib' . DIRECTORY_SEPARATOR . 'site-packages';
-          $userSite = '';
-          if (preg_match('/Python(\d{3})/i', $pythonExePath, $m)) {
-            $pyVerDigits = $m[1]; // e.g., 313
-            $appData = getenv('APPDATA'); // e.g., C:\\Users\\<User>\\AppData\\Roaming
-            if ($appData) {
-              $userSite = $appData . DIRECTORY_SEPARATOR . 'Python' . DIRECTORY_SEPARATOR . 'Python' . $pyVerDigits . DIRECTORY_SEPARATOR . 'site-packages';
+        
+        // Only run Python if cache was not used
+        if (!$usedCache) {
+            $baseArgs = [
+              escapeshellarg($scriptPath),
+              '--url ' . escapeshellarg($url),
+              '--language ' . escapeshellarg($lang),
+              '--output ' . escapeshellarg($outputFile),
+            ];
+            if ($transcriptJsonPath !== '') {
+              $baseArgs[] = '--transcript-json ' . escapeshellarg($transcriptJsonPath);
             }
-          }
-          $paths = [];
-          if (is_dir($systemSite)) { $paths[] = $systemSite; }
-          if ($userSite && is_dir($userSite)) { $paths[] = $userSite; }
-          if (!empty($paths)) {
-            $env['PYTHONPATH'] = implode(PATH_SEPARATOR, $paths);
-          }
-          
-          // Thêm thư mục Python vào PATH để đảm bảo DLL loading
-          $pythonDir = dirname($pythonExePath);
-          $systemPath = getenv('PATH') ?: 'C:\\Windows\\System32;C:\\Windows';
-          $env['PATH'] = $pythonDir . PATH_SEPARATOR . $systemPath;
+            if (!empty($GEMINI_KEY)) {
+              $baseArgs[] = '--api-key ' . escapeshellarg($GEMINI_KEY);
+            }
 
-          $proc = proc_open($command, $descriptorspec, $pipes, $repoRoot, $env);
-          if (is_resource($proc)) {
-            fclose($pipes[0]);
-            $stdout = stream_get_contents($pipes[1]);
-            fclose($pipes[1]);
-            $stderr = stream_get_contents($pipes[2]);
-            fclose($pipes[2]);
-            $exitCode = proc_close($proc);
-
-            $attemptLogs[] = [
-              'label' => $label,
-              'exit' => $exitCode,
-              'stdout_len' => strlen($stdout),
-              'stderr_len' => strlen($stderr),
-              'stdout' => $stdout,
-              'stderr' => $stderr,
+            // Define attempts: configured python, Windows py launcher, Windows py -3
+            $attemptDefs = [
+              ['exe' => escapeshellarg($PYTHON), 'label' => 'configured'],
+              ['exe' => 'py', 'label' => 'py'],
+              ['exe' => 'py -3', 'label' => 'py -3'],
             ];
 
-            $debugInfo .= "\nExit code: $exitCode";
-            $debugInfo .= "\nStdout length: " . strlen($stdout);
-            $debugInfo .= "\nStderr length: " . strlen($stderr);
+            $attemptLogs = [];
+            $succeeded = false;
+            $exitCode = null;
+            $command = '';
 
-            if ($exitCode === 0 && file_exists($outputFile)) {
-              $output = file_get_contents($outputFile);
-              $succeeded = true;
-              break;
+            foreach ($attemptDefs as $def) {
+              $pythonExe = $def['exe'];
+              $label = $def['label'];
+
+              // Assemble command
+              $cmdParts = array_merge([$pythonExe], $baseArgs);
+              $command = implode(' ', $cmdParts);
+
+              $debugInfo .= "\nAttempt with: $label";
+              $debugInfo .= "\nCommand: $command";
+              $debugInfo .= "\nExecuting Python...";
+
+              // Prepare process
+              $descriptorspec = [
+                0 => ['pipe', 'r'],  // stdin
+                1 => ['pipe', 'w'],  // stdout
+                2 => ['pipe', 'w'],  // stderr
+              ];
+              
+              // Create clean environment for Python subprocess to avoid network conflicts
+              $env = [
+                'PYTHONIOENCODING' => 'utf-8',
+                'PYTHONDONTWRITEBYTECODE' => '1',
+                'DISABLE_SOCKET_PATCH' => '1',
+                'FORCE_GEMINI_REST' => '1',
+                'SystemRoot' => getenv('SystemRoot') ?: 'C:\\Windows',
+                'TEMP' => getenv('TEMP') ?: sys_get_temp_dir(),
+                'TMP' => getenv('TMP') ?: sys_get_temp_dir(),
+                'USERPROFILE' => getenv('USERPROFILE'),
+                'APPDATA' => getenv('APPDATA'),
+                'LOCALAPPDATA' => getenv('LOCALAPPDATA'),
+              ];
+              
+              // Ensure Python can see site-packages even when running under PHP
+              $pythonExePath = $PYTHON; // unescaped path from config
+              $pythonHome = dirname($pythonExePath);
+              $systemSite = $pythonHome . DIRECTORY_SEPARATOR . 'Lib' . DIRECTORY_SEPARATOR . 'site-packages';
+              $userSite = '';
+              if (preg_match('/Python(\d{3})/i', $pythonExePath, $m)) {
+                $pyVerDigits = $m[1]; // e.g., 313
+                $appData = getenv('APPDATA'); // e.g., C:\\Users\\<User>\\AppData\\Roaming
+                if ($appData) {
+                  $userSite = $appData . DIRECTORY_SEPARATOR . 'Python' . DIRECTORY_SEPARATOR . 'Python' . $pyVerDigits . DIRECTORY_SEPARATOR . 'site-packages';
+                }
+              }
+              $paths = [];
+              if (is_dir($systemSite)) { $paths[] = $systemSite; }
+              if ($userSite && is_dir($userSite)) { $paths[] = $userSite; }
+              if (!empty($paths)) {
+                $env['PYTHONPATH'] = implode(PATH_SEPARATOR, $paths);
+              }
+              
+              // Thêm thư mục Python vào PATH để đảm bảo DLL loading
+              $pythonDir = dirname($pythonExePath);
+              $systemPath = getenv('PATH') ?: 'C:\\Windows\\System32;C:\\Windows';
+              $env['PATH'] = $pythonDir . PATH_SEPARATOR . $systemPath;
+
+              $proc = proc_open($command, $descriptorspec, $pipes, $repoRoot, $env);
+              if (is_resource($proc)) {
+                fclose($pipes[0]);
+                $stdout = stream_get_contents($pipes[1]);
+                fclose($pipes[1]);
+                $stderr = stream_get_contents($pipes[2]);
+                fclose($pipes[2]);
+                $exitCode = proc_close($proc);
+
+                $attemptLogs[] = [
+                  'label' => $label,
+                  'exit' => $exitCode,
+                  'stdout_len' => strlen($stdout),
+                  'stderr_len' => strlen($stderr),
+                  'stdout' => $stdout,
+                  'stderr' => $stderr,
+                ];
+
+                $debugInfo .= "\nExit code: $exitCode";
+                $debugInfo .= "\nStdout length: " . strlen($stdout);
+                $debugInfo .= "\nStderr length: " . strlen($stderr);
+
+                if ($exitCode === 0 && file_exists($outputFile)) {
+                  $output = file_get_contents($outputFile);
+                  $succeeded = true;
+                  
+                  // Save to cache for future use
+                  file_put_contents($cacheFile, $output);
+                  file_put_contents($cacheMetaFile, json_encode([
+                    'url' => $url,
+                    'language' => $lang,
+                    'timestamp' => time(),
+                    'video_id' => $videoId
+                  ]));
+                  $debugInfo .= "\n✅ Saved to cache";
+                  
+                  break;
+                }
+
+                // Heuristic: if python not found, try next attempt
+                if (stripos($stderr, 'is not recognized') !== false || stripos($stderr, 'not found') !== false) {
+                  $debugInfo .= "\nPython not found for attempt '$label', trying next...";
+                  continue;
+                }
+              } else {
+                $attemptLogs[] = [
+                  'label' => $label,
+                  'exit' => null,
+                  'stdout_len' => 0,
+                  'stderr_len' => 0,
+                  'stderr' => 'proc_open failed',
+                ];
+                $debugInfo .= "\nproc_open failed for attempt '$label'";
+              }
             }
 
-            // Heuristic: if python not found, try next attempt
-            if (stripos($stderr, 'is not recognized') !== false || stripos($stderr, 'not found') !== false) {
-              $debugInfo .= "\nPython not found for attempt '$label', trying next...";
-              continue;
+            if (!$succeeded) {
+              // Build helpful error message
+              $msg = "Không thể chạy Python.\n\nCác lần thử:\n";
+              foreach ($attemptLogs as $log) {
+                $msg .= "- " . $log['label'] . ": exit=" . var_export($log['exit'], true) . ", stdout_len=" . $log['stdout_len'] . ", stderr_len=" . $log['stderr_len'] . "\n";
+                if (!empty($log['stdout'])) {
+                  $msg .= "  stdout: " . $log['stdout'] . "\n";
+                }
+                if (!empty($log['stderr'])) {
+                  $msg .= "  stderr: " . $log['stderr'] . "\n";
+                }
+              }
+              $msg .= "\nCách sửa: Mở file web/config.php và đặt 'python' = đường dẫn đầy đủ tới python.exe.\nVí dụ: C:\\Users\\<User>\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\nHoặc đặt biến môi trường hệ thống PYTHON_EXE trỏ tới python.exe.\nBạn cũng có thể cài Python Launcher và để trống để dùng 'py'/'py -3'.";
+              $error = $msg;
             }
-          } else {
-            $attemptLogs[] = [
-              'label' => $label,
-              'exit' => null,
-              'stdout_len' => 0,
-              'stderr_len' => 0,
-              'stderr' => 'proc_open failed',
-            ];
-            $debugInfo .= "\nproc_open failed for attempt '$label'";
-          }
-        }
-
-        if (!$succeeded) {
-          // Build helpful error message
-          $msg = "Không thể chạy Python.\n\nCác lần thử:\n";
-          foreach ($attemptLogs as $log) {
-            $msg .= "- " . $log['label'] . ": exit=" . var_export($log['exit'], true) . ", stdout_len=" . $log['stdout_len'] . ", stderr_len=" . $log['stderr_len'] . "\n";
-            if (!empty($log['stdout'])) {
-              $msg .= "  stdout: " . $log['stdout'] . "\n";
-            }
-            if (!empty($log['stderr'])) {
-              $msg .= "  stderr: " . $log['stderr'] . "\n";
-            }
-          }
-          $msg .= "\nCách sửa: Mở file web/config.php và đặt 'python' = đường dẫn đầy đủ tới python.exe.\nVí dụ: C:\\Users\\<User>\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\nHoặc đặt biến môi trường hệ thống PYTHON_EXE trỏ tới python.exe.\nBạn cũng có thể cài Python Launcher và để trống để dùng 'py'/'py -3'.";
-          $error = $msg;
-        }
+        } // end if (!$usedCache)
     }
 }
 ?>
@@ -966,19 +1012,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <p>Dán link YouTube vào ô bên dưới để tạo bài học với AI</p>
         </div>
         <?php else: ?>
-          <?php if ($debugInfo !== ''): ?>
-            <div class="message">
-              <div class="message-header">
-                <div class="message-avatar" style="background: #f59e0b;">⚙️</div>
-                <div class="message-role">System Debug</div>
-              </div>
-              <div class="message-content" style="background: #2d2d2d; font-family: monospace; font-size: 12px;">
-                <?= nl2br(htmlspecialchars($debugInfo, ENT_QUOTES, 'UTF-8')) ?>
-              </div>
-            </div>
-          <?php endif; ?>
-          
-          <!-- User Message -->
+            <!-- User Message -->
           <div class="message user-message">
             <div class="message-header">
               <div class="message-avatar user-avatar">👤</div>
@@ -1009,7 +1043,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="message">
             <div class="message-header">
               <div class="message-avatar ai-avatar">🤖</div>
-              <div class="message-role"> AI</div>
+              <div class="message-role">AI</div>
             </div>
             <div class="message-content" id="aiResponse">
               <?php

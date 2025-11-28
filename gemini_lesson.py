@@ -86,10 +86,20 @@ def load_transcript_from_json(path: str) -> str:
 
 
 def download_audio(video_id: str) -> str:
+    """Tải audio từ YouTube bằng yt-dlp với workaround cho YouTube API mới"""
     url = f"https://www.youtube.com/watch?v={video_id}"
     tmp_dir = tempfile.mkdtemp(prefix="yt_audio_")
     out_path = os.path.join(tmp_dir, "audio.m4a")
-    base_cmd = ["-f", "bestaudio/best", "-x", "--audio-format", "m4a", "-o", out_path, url]
+    
+    # ✅ Thêm workaround cho YouTube mới
+    base_cmd = [
+        "-f", "bestaudio/best", 
+        "-x", 
+        "--audio-format", "m4a",
+        "--extractor-args", "youtube:player_client=default",  # ← FIX WARNING
+        "-o", out_path, 
+        url
+    ]
     
     # Get Python Scripts directory for yt-dlp.exe
     python_dir = os.path.dirname(sys.executable)
@@ -115,7 +125,6 @@ def download_audio(video_id: str) -> str:
             last_err = e
             continue
     raise RuntimeError(f"Tải audio thất bại (yt-dlp/ffmpeg?): {last_err}")
-
 
 def transcribe_with_whisper(audio_path: str, language: str) -> str:
     try:
@@ -413,35 +422,35 @@ def generate_lesson_with_gemini(video_title: str, key_points: List[str], languag
 Ban la mot chuyen gia giao duc. Tu cac key points duoc trich xuat tu mot video YouTube,
 hay tao mot BAI HOC HOAN CHINH bang tieng Viet voi cau truc sau:
 
-# TIEU DE BAI HOC
+# TIÊU ĐỀ BÀI HỌC
 {title_instruction}
 
-## MUC TIEU HOC TAP
+## MỤC TIÊU HỌC TẬP
 [Liet ke 4-6 muc tieu cu the ma nguoi hoc se dat duoc]
 
-## CAC KHAI NIEM CHINH
+## CÁC KHÁI NIỆM CHÍNH
 [Giai thich chi tiet cac khai niem quan trong, co dinh nghia, vi du minh hoa]
 
-## NOI DUNG CHI TIET
+## NỘI DUNG CHI TIẾT
 [Trinh bay noi dung theo tung phan logic, co the chia thanh cac muc con:
 - Phan 1: ...
 - Phan 2: ...
 Giu day du thong tin ky thuat, code, cong thuc neu co]
 
-## VI DU MINH HOA
+## VÍ DỤ MINH HỌA
 [Dua ra cac vi du cu the, de hieu de minh hoa cac khai niem]
 
-## CAC BUOC THUC HIEN (neu co)
+## CÁC BƯỚC THỰC HIỆN
 [Neu video co huong dan thuc hanh, liet ke chi tiet tung buoc]
 
-## TIPS & LUU Y
+## TIPS & LƯU Ý
 [Cac meo, best practices, dieu can tranh]
 
-## TOM TAT
-[Tom tat 5-7 diem chinh can nho]
+## TÓM TẮT
+[Tóm tắt 5-7 điểm chính cần nhớ]
 
-## CAU HOI ON TAP
-[5-7 cau hoi giup nguoi hoc kiem tra kien thuc]
+## CÂU HỎI ÔN TẬP
+[5-7 câu hỏi giúp người học kiểm tra kiến thức]
 
 ---
 
